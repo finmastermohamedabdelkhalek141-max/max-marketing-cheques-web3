@@ -27,42 +27,48 @@ function loadState(){ return defaultState(); }
 let firestoreReady = false;
 let pendingSave = false;
 
-// بيدمج قوائم السجلات (عملاء/شيكات/تحصيلات) بين نسخة السيرفر الأحدث ونسختنا المحلية
-// بالاعتماد على حقل "id" الفريد لكل سجل، عشان سجل موظف تاني ما يتمسحش لو
-// اتحفظ في نفس اللحظة تقريبًا اللي حفظنا فيها إحنا.
-function mergeById(serverArr, localArr){
-  serverArr = Array.isArray(serverArr) ? serverArr : [];
-  localArr = Array.isArray(localArr) ? localArr : [];
-  const byId = new Map();
-  serverArr.forEach(item=>{ if(item && item.id!=null) byId.set(item.id, item); });
-  localArr.forEach(item=>{ if(item && item.id!=null) byId.set(item.id, item); });
-  return Array.from(byId.values());
-}
+// طابور تسلسلي: كل عملية حفظ تنتظر اكتمال اللي قبلها، وتُنفَّذ داخل Firestore transaction
+// تقرأ أحدث نسخة من السيرفر لحظة الكتابة (مش النسخة القديمة المحلية) فتمنع "دعس" حذف/تعديل
+// حصل من مستخدم تاني قبل ما نحفظ نحن (كانت هي سبب رجوع البيانات المحذوفة).
+let saveQueue = Promise.resolve();
 
 function saveState(){
   pendingSave = true;
-  db.runTransaction(tx=>{
-    return tx.get(STATE_DOC).then(doc=>{
-      const server = doc.exists ? Object.assign(defaultState(), doc.data()) : defaultState();
-      const merged = Object.assign({}, server, state, {
-        clients: mergeById(server.clients, state.clients),
-        cheques: mergeById(server.cheques, state.cheques),
-        collections: mergeById(server.collections, state.collections),
-        nextClientSeq: Math.max(server.nextClientSeq||1, state.nextClientSeq||1),
-        nextChequeSeq: Math.max(server.nextChequeSeq||1, state.nextChequeSeq||1),
-        nextCollectionSeq: Math.max(server.nextCollectionSeq||1, state.nextCollectionSeq||1),
-        userStatus: Object.assign({}, server.userStatus, state.userStatus)
+  const localSnapshot = state; // النسخة المحلية اللي عملنا عليها التغيير المطلوب حفظه الآن
+  saveQueue = saveQueue.then(()=>
+    db.runTransaction(tx=>{
+      return tx.get(STATE_DOC).then(doc=>{
+        const serverState = doc.exists ? Object.assign(defaultState(), doc.data()) : defaultState();
+        // ندمج تغييرنا المحلي فوق أحدث نسخة من السيرفر بدل استبدالها بالكامل،
+        // بحيث أي تعديل/حذف حصل من مستخدم تاني في نفس اللحظة تقريبًا ما يضيعش.
+        const merged = mergeStateForSave(serverState, localSnapshot);
+        tx.set(STATE_DOC, merged);
+        return merged;
       });
-      tx.set(STATE_DOC, merged);
-      return merged;
-    });
-  }).then(merged=>{
-    state = merged;
-  }).catch(err=>{
-    console.error("Firestore save error:", err);
-    toast("تعذر حفظ البيانات أونلاين — تحقق من اتصال الإنترنت");
-  });
+    }).catch(err=>{
+      console.error("Firestore save error:", err);
+      toast("تعذر حفظ البيانات أونلاين — تحقق من اتصال الإنترنت");
+    })
+  );
 }
+
+// دمج بسيط: بياناتنا المحلية (اللي فيها التغيير الجديد) هي المرجع لقوائم العملاء/الشيكات/التحصيلات
+// والحالات، لأن هي دي اللي عليها فعل المستخدم الحالي (إضافة/تعديل/حذف). الهدف من الدمج هو تجنّب
+// إعادة كتابة حقول لسه ما وصلتناش (لو تمت إضافتها من مستخدم تاني بين آخر قراءة عندنا وبين لحظة الحفظ)
+// عن طريق البدء من نسخة السيرفر الأحدث بدل نسخة محلية قديمة.
+function mergeStateForSave(serverState, localState){
+  return {
+    ...serverState,
+    clients: localState.clients,
+    cheques: localState.cheques,
+    collections: localState.collections,
+    nextClientSeq: Math.max(serverState.nextClientSeq||1, localState.nextClientSeq||1),
+    nextChequeSeq: Math.max(serverState.nextChequeSeq||1, localState.nextChequeSeq||1),
+    nextCollectionSeq: Math.max(serverState.nextCollectionSeq||1, localState.nextCollectionSeq||1),
+    userStatus: { ...serverState.userStatus, ...localState.userStatus }
+  };
+}
+
 
 STATE_DOC.onSnapshot(
   { includeMetadataChanges:true },
