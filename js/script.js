@@ -2945,6 +2945,7 @@ if(currentUser){
 }
 
 })();
+// تعريف المصفوفة
 const USERS = [
   {
     code: "CFOMRKOO11@gmail.com",
@@ -2987,3 +2988,31 @@ const USERS = [
     caps: { clientsMode:"none", chequesMode:"viewonly", collectMode:"none" }
   }
 ];
+
+// دالة تسجيل الدخول
+function login(email, password) {
+  const user = USERS.find(u => u.code === email && u.password === password);
+  if(user) {
+    console.log("✅ مرحبا " + user.label + " (" + user.role + ")");
+    console.log("الصلاحيات: ", user.perms);
+    console.log("القدرات: ", user.caps);
+    return user;
+  } else {
+    console.log("❌ بيانات الدخول غير صحيحة");
+    return null;
+  }
+}
+
+// دالة التحقق من الصلاحيات
+function checkPermissions(user, permission) {
+  if(user && user.perms.includes(permission)) {
+    console.log("✅ لديك صلاحية: " + permission);
+  } else {
+    console.log("❌ لا تملك صلاحية: " + permission);
+  }
+}
+
+// تجربة عملية
+let currentUser = login("CMO11@gmail.com", "123123"); 
+checkPermissions(currentUser, "cheques"); // ✅ لديك صلاحية: cheques
+checkPermissions(currentUser, "users");   // ❌ لا تملك صلاحية: users
