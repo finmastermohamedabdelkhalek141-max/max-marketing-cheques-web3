@@ -2945,7 +2945,17 @@ if(currentUser){
 }
 
 })();
-// تعريف المصفوفة
+<table id="usersTable" border="1">
+  <tr>
+    <th>الكود</th>
+    <th>الوظيفة</th>
+    <th>الحالة</th>
+    <th>الملاحظات</th>
+  </tr>
+</table>
+
+<script>
+// تعريف المصفوفة مرة واحدة
 const USERS = [
   {
     code: "CFOMRKOO11@gmail.com",
@@ -2970,22 +2980,6 @@ const USERS = [
     label: "موظف",
     perms: ["cheques"],
     caps: { clientsMode:"none", chequesMode:"register", collectMode:"none" }
-  },
-  {
-    code: "CMO22@gmail.com",
-    password: "123123",
-    role: "employee",
-    label: "موظف",
-    perms: ["clients"],
-    caps: { clientsMode:"addonly", chequesMode:"none", collectMode:"none" }
-  },
-  {
-    code: "CFOM22@gmail.com",
-    password: "123123",
-    role: "employee",
-    label: "موظف",
-    perms: ["cheques"],
-    caps: { clientsMode:"none", chequesMode:"viewonly", collectMode:"none" }
   }
 ];
 
@@ -3012,27 +3006,6 @@ function checkPermissions(user, permission) {
   }
 }
 
-// تجربة عملية
-let currentUser = login("CMO11@gmail.com", "123123"); 
-checkPermissions(currentUser, "cheques"); // ✅ لديك صلاحية: cheques
-checkPermissions(currentUser, "users");   // ❌ لا تملك صلاحية: users
-<table id="usersTable" border="1">
-  <tr>
-    <th>الكود</th>
-    <th>الوظيفة</th>
-    <th>الحالة</th>
-    <th>الملاحظات</th>
-  </tr>
-</table>
-
-<script>
-// تعريف المصفوفة
-const USERS = [
-  { code: "CFOMRKOO11@gmail.com", role: "admin", label: "أدمن", perms: ["receipts","cheques","collect","clients","reportCheques","reportClients","users"] },
-  { code: "CMO11@gmail.com", role: "employee", label: "موظف", perms: ["clients","cheques"] },
-  { code: "CFO11@gmail.com", role: "employee", label: "موظف", perms: ["cheques"] }
-];
-
 // دالة عرض المستخدمين في الجدول
 function renderUsers() {
   const table = document.getElementById("usersTable");
@@ -3045,6 +3018,12 @@ function renderUsers() {
   });
 }
 
-// استدعاء الدالة بعد تحميل الصفحة
+// تجربة عملية
+let currentUser = login("CMO11@gmail.com", "123123"); 
+checkPermissions(currentUser, "cheques"); // ✅ لديك صلاحية: cheques
+checkPermissions(currentUser, "users");   // ❌ لا تملك صلاحية: users
+
+// عرض الجدول
 renderUsers();
 </script>
+
