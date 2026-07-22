@@ -3016,3 +3016,35 @@ function checkPermissions(user, permission) {
 let currentUser = login("CMO11@gmail.com", "123123"); 
 checkPermissions(currentUser, "cheques"); // ✅ لديك صلاحية: cheques
 checkPermissions(currentUser, "users");   // ❌ لا تملك صلاحية: users
+<table id="usersTable" border="1">
+  <tr>
+    <th>الكود</th>
+    <th>الوظيفة</th>
+    <th>الحالة</th>
+    <th>الملاحظات</th>
+  </tr>
+</table>
+
+<script>
+// تعريف المصفوفة
+const USERS = [
+  { code: "CFOMRKOO11@gmail.com", role: "admin", label: "أدمن", perms: ["receipts","cheques","collect","clients","reportCheques","reportClients","users"] },
+  { code: "CMO11@gmail.com", role: "employee", label: "موظف", perms: ["clients","cheques"] },
+  { code: "CFO11@gmail.com", role: "employee", label: "موظف", perms: ["cheques"] }
+];
+
+// دالة عرض المستخدمين في الجدول
+function renderUsers() {
+  const table = document.getElementById("usersTable");
+  USERS.forEach(user => {
+    let row = table.insertRow();
+    row.insertCell(0).innerText = user.code;
+    row.insertCell(1).innerText = user.label;
+    row.insertCell(2).innerText = "مغلق"; // الحالة الافتراضية
+    row.insertCell(3).innerText = user.perms.join(", ");
+  });
+}
+
+// استدعاء الدالة بعد تحميل الصفحة
+renderUsers();
+</script>
