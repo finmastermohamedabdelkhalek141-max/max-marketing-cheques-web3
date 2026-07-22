@@ -2945,3 +2945,45 @@ if(currentUser){
 }
 
 })();
+const USERS = [
+  {
+    code: "CFOMRKOO11@gmail.com",
+    password: "97982732",
+    role: "admin",
+    label: "أدمن",
+    perms: ["receipts","cheques","collect","clients","reportCheques","reportClients","users"],
+    caps: { clientsMode:"full", chequesMode:"full", collectMode:"full" }
+  },
+  {
+    code: "CMO11@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["clients","cheques"],
+    caps: { clientsMode:"addonly", chequesMode:"viewonly", collectMode:"none" }
+  },
+  {
+    code: "CFO11@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["cheques"],
+    caps: { clientsMode:"none", chequesMode:"register", collectMode:"none" }
+  },
+  {
+    code: "CMO22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["clients"],
+    caps: { clientsMode:"addonly", chequesMode:"none", collectMode:"none" }
+  },
+  {
+    code: "CFOM22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["cheques"],
+    caps: { clientsMode:"none", chequesMode:"viewonly", collectMode:"none" }
+  }
+];
