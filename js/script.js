@@ -97,7 +97,6 @@ if(!state.userStatus || typeof state.userStatus !== "object") state.userStatus =
 
 /* ============================= AUTH / PERMISSIONS ============================= */
 const SESSION_KEY = "marketing_cheques_session_v1";
-
 // كل مستخدم له كود (اسم دخول) ورقم سري وصلاحيات محددة (أسماء الشاشات المسموح بها)
 const USERS = [
   {
@@ -112,7 +111,7 @@ const USERS = [
     code: "CMO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["clients","cheques"],
     caps: { clientsMode:"addonly", chequesMode:"viewonly", collectMode:"none" }
   },
@@ -120,29 +119,50 @@ const USERS = [
     code: "CFO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["cheques"],
     caps: { clientsMode:"none", chequesMode:"register", collectMode:"none" }
+  },
+  {
+    code: "CMO22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["clients"],
+    caps: { clientsMode:"addonly", chequesMode:"none", collectMode:"none" }
+  },
+  {
+    code: "CFOM22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["cheques"],
+    caps: { clientsMode:"none", chequesMode:"viewonly", collectMode:"none" }
+  },
+  {
+    code: "mmm123@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["cheques"],
+    caps: { clientsMode:"none", chequesMode:"limited", collectMode:"none" }
   }
 ];
-
 let currentUser = null;
-
 function normCode(v){ return String(v||"").trim().toLowerCase(); }
-
 function findUser(code, password){
   return USERS.find(u => normCode(u.code)===normCode(code) && String(u.password)===String(password)) || null;
 }
-
 function hasPerm(viewName){
   if(!currentUser) return false;
   return currentUser.perms.includes(viewName);
 }
-
 function caps(){
   return (currentUser && currentUser.caps) || { clientsMode:"none", chequesMode:"none", collectMode:"none" };
 }
-
+function isLimitedPlanViewRole(){
+  return caps().chequesMode === "limited";
+}
 /* ============================= تفعيل/إيقاف حسابات المستخدمين (الأكواد) ============================= */
 // الحساب يُعتبر مفعّلاً افتراضيًا ما لم يُسجَّل له إيقاف صريح في state.userStatus
 function isUserActive(code){
@@ -761,7 +781,8 @@ function renderChequesScreen(){
   if(!c) return html;
 
   const t = clientTotals(c);
-  const chqNoActions = isLimitedChequesRole() || isViewOnlyChequesRole();
+  const chqLimited = isLimitedPlanViewRole();
+  const chqNoActions = isLimitedChequesRole() || isViewOnlyChequesRole() || chqLimited;
   const chqNoSelect = isViewOnlyChequesRole();
 
   html += `
@@ -777,14 +798,42 @@ function renderChequesScreen(){
         </div>
       </div>
     </div>
+    ${chqLimited ? "" : `
     <div class="kpi-grid" style="margin-top:18px;">
       <div class="kpi"><div class="lbl">إجمالي المستحق</div><div class="val">${fmt(t.totalDue)} <small>ر.ع</small></div></div>
       <div class="kpi"><div class="lbl">إجمالي المسدد (شيكات محصّلة فعليًا)</div><div class="val">${fmt(t.totalPaid)} <small>ر.ع</small></div></div>
       <div class="kpi"><div class="lbl">المتبقي</div><div class="val">${fmt(t.remaining)} <small>ر.ع</small></div></div>
       <div class="kpi"><div class="lbl">متأخر السداد</div><div class="val" style="color:${t.overdue>0?'var(--warn)':'inherit'}">${fmt(t.overdue)} <small>ر.ع</small></div></div>
-    </div>
+    </div>`}
   </div>
 
+  html += chqLimited ? `
+  <div class="card">
+    <h2 style="margin:0 0 12px;">خطة السداد والدفعات</h2>
+    <p class="hint">حدد دفعة أو أكثر مستحقة، ثم سجّل رقم الشيك المستلم من العميل أدناه.</p>
+    <div class="table-wrap">
+      <table id="planTable">
+        <thead><tr>
+          <th style="width:36px;" class="no-print"></th>
+          <th>م</th><th>البيان</th><th>تاريخ الاستحقاق</th>
+        </tr></thead>
+        <tbody>
+          ${t.plan.filter(inst=>inst.amount>0.001).map(inst=>{
+            const uncovered = Math.max(0, inst.amount - inst.coveredAmount);
+            const checked = chequeSearchState.selectedInstallments[inst.id] ? "checked" : "";
+            const disabled = uncovered<=0.5 ? "disabled" : "";
+            return `<tr>
+              <td class="no-print"><input type="checkbox" class="instCheck" data-inst="${inst.id}" ${checked} ${disabled}></td>
+              <td class="num muted">${inst.seq}</td>
+              <td>${esc(inst.label)}</td>
+              <td class="num">${fmtDate(inst.dueDate)}</td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  ` : `
   <div class="card">
     <div class="toolbar" style="margin-bottom:2px;">
       <h2 style="margin:0;">خطة السداد والدفعات</h2>
@@ -835,6 +884,7 @@ function renderChequesScreen(){
       </table>
     </div>
   </div>
+  `;
 
   ${chqNoSelect ? "" : `
   <div class="card">
