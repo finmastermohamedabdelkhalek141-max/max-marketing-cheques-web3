@@ -112,7 +112,7 @@ const USERS = [
     code: "CMO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["clients","cheques"],
     caps: { clientsMode:"addonly", chequesMode:"viewonly", collectMode:"none" }
   },
@@ -120,7 +120,7 @@ const USERS = [
     code: "CFO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["cheques"],
     caps: { clientsMode:"none", chequesMode:"register", collectMode:"none" }
   }
