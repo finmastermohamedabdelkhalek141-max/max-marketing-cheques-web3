@@ -112,7 +112,7 @@ const USERS = [
     code: "CMO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["clients","cheques"],
     caps: { clientsMode:"addonly", chequesMode:"viewonly", collectMode:"none" }
   },
@@ -120,9 +120,25 @@ const USERS = [
     code: "CFO11@gmail.com",
     password: "123123",
     role: "employee",
-    label: "موظف",
+    label: "مسؤول",
     perms: ["cheques"],
     caps: { clientsMode:"none", chequesMode:"register", collectMode:"none" }
+  }
+  {
+    code: "CMO22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["clients"],
+    caps: { clientsMode:"addonly_hidden", chequesMode:"none", collectMode:"none" }
+  },
+  {
+    code: "CFOM22@gmail.com",
+    password: "123123",
+    role: "employee",
+    label: "موظف",
+    perms: ["cheques"],
+    caps: { clientsMode:"none", chequesMode:"viewonly", collectMode:"none" }
   }
 ];
 
@@ -169,7 +185,10 @@ function isViewOnlyChequesRole(){
 }
 // موظف CMO11: يدخل شاشة العملاء وخطط السداد لإضافة عميل جديد فقط، بدون تعديل أو حذف لعملاء موجودين
 function isAddOnlyClientsRole(){
-  return caps().clientsMode === "addonly";
+  return caps().clientsMode === "addonly" || caps().clientsMode === "addonly_hidden";
+}
+function isHiddenListClientsRole(){
+  return caps().clientsMode === "addonly_hidden";
 }
 
 function firstAllowedView(){
@@ -1440,19 +1459,23 @@ function resolveYearPhases(yearVal, p1raw, p2raw, p3raw){
 
 function renderClientsScreen(){
   const addOnly = isAddOnlyClientsRole();
+  const hideList = isHiddenListClientsRole();
   let html = `
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
       <h2 style="margin:0;">قائمة العملاء</h2>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${hideList ? "" : `
         <button class="btn btn-ghost btn-sm no-print" id="btnExportClientsListExcel">تصدير Excel</button>
-        <button class="btn btn-ghost btn-sm no-print" id="btnExportClientsListWord">تصدير Word</button>
+        <button class="btn btn-ghost btn-sm no-print" id="btnExportClientsListWord">تصدير Word</button>`}
         <button class="btn btn-navy btn-sm" id="btnNewClient">+ عميل جديد</button>
       </div>
     </div>
     <p class="hint">إدارة بيانات العميل وأسس خطة السداد (سعر الوحدة، الحجز، المقدم، توزيع السنوات).</p>`;
 
-  if(state.clients.length===0){
+  if(hideList){
+    html += `<div class="empty"><div class="ico">🔒</div>صلاحيتك تسمح فقط بإضافة عميل جديد.</div>`;
+  } else if(state.clients.length===0){
     html += `<div class="empty"><div class="ico">📋</div>لا يوجد عملاء بعد. أضف أول عميل لبدء إنشاء خطة سداد.</div>`;
   } else {
     html += `<div class="table-wrap"><table id="clientsListTable"><thead><tr>
