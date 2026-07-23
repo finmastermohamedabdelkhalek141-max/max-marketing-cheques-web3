@@ -116,6 +116,13 @@ const USERS = [
     perms: ["clients","cheques"],
     caps: { clientsMode:"addonly", chequesMode:"viewonly", collectMode:"none" }
   },
+  code: "CMO22@gmail.com",
+password: "123123",
+role: "employee",
+label: "موظف",
+perms: ["clients","cheques"],
+caps: { clientsMode:"addonly_hidden", chequesMode:"viewonly", collectMode:"none" }
+
   {
     code: "CFO11@gmail.com",
     password: "123123",
